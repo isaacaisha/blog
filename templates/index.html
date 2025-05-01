@@ -21,7 +21,8 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
-        {% for post in all_posts %}
+        {% for post in all_posts|reverse %}
+        <hr>
         <div class="post-preview">
           <a href="{{ url_for('show_post', post_id=post.id) }}">
             <h2 class="post-title">
@@ -36,20 +37,19 @@
             on {{post.date}}
 
             <!-- If user id is 1 then they can see the deleted button -->
-            {% if current_user.id == 1: %}
+            {% if current_user.role == 'admin' %}
             <a href="{{url_for('delete_post', post_id=post.id) }}" style="color:red"> ✘</a>
-          </p>
             {% endif %}
+          </p>
         </div>
-        <hr>
         {% endfor %}
 
 
         <!-- New Post -->
         <!-- If user id is 1 then they can see the deleted button -->
-        {% if current_user.id in [1, 2] %}
-        <div class="clearfix">
-          <a class="btn btn-primary float-right" href="{{url_for('add_new_post')}}">Create New Post</a>
+        {% if current_user.role == 'admin' %}
+        <div class="clearfix text-center mb-5 mt-5">
+          <a class="btn btn-primary" href="{{url_for('add_new_post')}}">Create New Post</a>
         </div>
         {% endif %}
       </div>

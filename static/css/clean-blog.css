@@ -59,6 +59,7 @@ blockquote {
   border-bottom-right-radius: 5px;
   border-bottom-left-radius: 5px;
 }
+
 content p {
     font-style: italic;
     color:red;
@@ -213,6 +214,9 @@ img::-moz-selection {
     transition: background-color 0.2s;
     /* Force Hardware Acceleration in WebKit */
     transform: translate3d(0, 0, 0);
+    /* standard property for all browsers */
+    backface-visibility: hidden;
+    /* WebKit-only prefix */
     -webkit-backface-visibility: hidden;
   }
   #mainNav.is-fixed {

@@ -1,31 +1,54 @@
+import os
+import flask
+from markupsafe import Markup
+
+# Monkey-patch flask.Markup so flask_ckeditor can import it:
+flask.Markup = Markup
+
 from flask import Flask, render_template, redirect, url_for, flash, request, abort
 from flask_bootstrap import Bootstrap
-from flask_ckeditor import CKEditor
-from datetime import date
+from flask_ckeditor import CKEditor   # ← now it will see flask.Markup
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
-from flask_login import UserMixin, login_user, LoginManager,  current_user, logout_user
-from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
+from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_gravatar import Gravatar
+from flask_migrate import Migrate
 from functools import wraps
-import os
+from datetime import datetime, timezone
+from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sqlite:///blog.db')
+
+# Set up Flask app
+app = Flask(__name__, instance_relative_config=True)
+
+# Secret key
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+# Database configuration — use blog.db inside the instance folder
+# Force DATABASE_URL to instance path if not set
+db_path = os.path.join(app.instance_path, 'blog.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or f'sqlite:///{db_path}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Ensure instance folder exists
+os.makedirs(app.instance_path, exist_ok=True)
+
+# Extensions
 ckeditor = CKEditor(app)
 Bootstrap(app)
-
-gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False,
-                    force_lower=False, use_ssl=False, base_url=None)
-
-# CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///blog.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+gravatar = Gravatar(app, size=100, rating='g', default='retro',
+                    force_default=False, force_lower=False,
+                    use_ssl=False, base_url=None)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# Optional: app-wide datetime (if needed globally)
+date = datetime.now(timezone.utc).strftime("%a %d %B %Y")
 
 
 @login_manager.user_loader
@@ -40,6 +63,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     name = db.Column(db.String(100))
+    role     = db.Column(db.String(19), nullable=False, default='user')
 
     # This will act like a List of BlogPost objects attached to each User.
     # The "author" refers to the author property in the BlogPost class.
@@ -96,10 +120,22 @@ def favicon():
     return app.send_static_file('img/favicon.ico')
 
 
+# Create admin-only decorator
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # If user is not admin, then return abort with 403 error
+        if not current_user.is_authenticated or current_user.role != 'admin':
+            return abort(403)
+        # Otherwise continue with the route function
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts, current_user=current_user)
+    return render_template("index.html", all_posts=posts, current_user=current_user, date=date)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -135,7 +171,7 @@ def register():
 
         return redirect(url_for('get_all_posts'))
 
-    return render_template("register.html", form=form, current_user=current_user)
+    return render_template("register.html", form=form, current_user=current_user, date=date)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -144,6 +180,7 @@ def login():
     if request.method == "POST":
         email = request.form.get('email')
         password = request.form.get('password')
+        code = form.secret_code.data
 
         # Find user by email entered.
         user = User.query.filter_by(email=email).first()
@@ -158,10 +195,16 @@ def login():
             return redirect(url_for('login'))
         # Email exists and password correct
         else:
+            # If they supplied the correct admin code, promote them
+            if code and code == 'siisi321' and user.role != 'admin':
+                user.role = 'admin'
+                db.session.commit()
+                flash('🎉 You now have admin access!', 'success')
+
             login_user(user)
             return redirect(url_for('get_all_posts'))
 
-    return render_template("login.html", form=form, current_user=current_user)
+    return render_template("login.html", form=form, current_user=current_user, date=date)
 
 
 @app.route('/logout')
@@ -188,29 +231,17 @@ def show_post(post_id):
         db.session.add(new_comment)
         db.session.commit()
 
-    return render_template("post.html", post=requested_post, form=form, current_user=current_user)
+    return render_template("post.html", post=requested_post, form=form, current_user=current_user, date=date)
 
 
 @app.route("/about")
 def about():
-    return render_template("about.html", current_user=current_user)
+    return render_template("about.html", current_user=current_user, date=date)
 
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html", current_user=current_user)
-
-
-# Create admin-only decorator
-def admin_only(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # If id is not 1 or 2, then return abort with 403 error
-        if current_user.id != 1 and current_user.id != 2:
-            return abort(403)
-        # Otherwise continue with the route function
-        return f(*args, **kwargs)
-    return decorated_function
+    return render_template("contact.html", current_user=current_user, date=date)
 
 
 @app.route("/new-post", methods=['GET', 'POST'])
@@ -225,12 +256,12 @@ def add_new_post():
             body=form.body.data,
             img_url=form.img_url.data,
             author=current_user,
-            date=date.today().strftime("%B %d, %Y")
+            date=date
         )
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for("get_all_posts"))
-    return render_template("make-post.html", form=form, current_user=current_user)
+    return render_template("make-post.html", form=form, current_user=current_user, date=date)
 
 
 @app.route("/edit-post/<int:post_id>", methods=['GET', 'POST'])
@@ -253,7 +284,7 @@ def edit_post(post_id):
         db.session.commit()
         return redirect(url_for("show_post", post_id=post.id))
 
-    return render_template("make-post.html", form=edit_form, is_edit_post=True, current_user=current_user)
+    return render_template("make-post.html", form=edit_form, is_edit_post=True, current_user=current_user, date=date)
 
 
 @app.route("/delete/<int:post_id>")

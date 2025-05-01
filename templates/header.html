@@ -8,13 +8,13 @@
   <meta property="og:type" content="·SìįSí· blog">
   <meta property="og:title" content="·SìįSí· blog">
   <meta content="Programmer" property="og:description">
-  <meta property="og:image" content="https://blog.siisi.online/static/img/medusa.png">
+  <meta property="og:image" content="https://blog.siisi.online/static/img/blog.jpg">
   <meta property="og:url" content="https://blog.siisi.online">
   <meta property="og:description" content="·SìįSí· - Blog - Programmer & Developer, Frontend & Backend">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Programmer & Developer, Frontend & Backend - ·SìįSí· blog">
   <meta name="twitter:description" content="Programmer & Developer - ·SìįSí· blog">
-  <meta name="twitter:image" content="https://blog.siisi.online/static/img/medusa.png">
+  <meta name="twitter:image" content="https://blog.siisi.online/static/img/blog.jpg">
   <meta name="keywords" content="- ·SìįSí· - blog - programmer, developer, frontend, backend, python, javascript">
   <meta name="author" content="Developer">
   <!--<meta name="google-site-verification" content="YOUR_GOOGLE_SEARCH_CONSOLE_VERIFICATION_CODE" />-->
@@ -53,7 +53,12 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('get_all_posts') }}">Home</a>
           </li>
-
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">Contact</a>
+          </li>
           {% if not current_user.is_authenticated: %}
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('login') }}">Login</a>
@@ -66,14 +71,19 @@
             <a class="nav-link" href="{{ url_for('logout') }}">Log Out</a>
           </li>
           {% endif %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('about') }}">About</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('contact') }}">Contact</a>
-          </li>
         </ul>
       </div>
     </div>
   </nav>
+
+  <div class="text-center text-danger">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+  
 </body>
