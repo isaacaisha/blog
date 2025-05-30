@@ -30,6 +30,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 db_path = os.path.join(app.instance_path, 'blog.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Ensure instance folder exists
 os.makedirs(app.instance_path, exist_ok=True)
@@ -46,9 +47,6 @@ gravatar = Gravatar(app, size=100, rating='g', default='retro',
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-
-# Optional: app-wide datetime (if needed globally)
-date = datetime.now(timezone.utc).strftime("%a %d %B %Y")
 
 
 @login_manager.user_loader
@@ -135,7 +133,12 @@ def admin_only(f):
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
-    return render_template("index.html", all_posts=posts, current_user=current_user, date=date)
+    return render_template(
+        "index.html",
+        all_posts=posts,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -171,7 +174,12 @@ def register():
 
         return redirect(url_for('get_all_posts'))
 
-    return render_template("register.html", form=form, current_user=current_user, date=date)
+    return render_template(
+        "register.html",
+        form=form,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -204,7 +212,12 @@ def login():
             login_user(user)
             return redirect(url_for('get_all_posts'))
 
-    return render_template("login.html", form=form, current_user=current_user, date=date)
+    return render_template(
+        "login.html",
+        form=form,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route('/logout')
@@ -231,17 +244,31 @@ def show_post(post_id):
         db.session.add(new_comment)
         db.session.commit()
 
-    return render_template("post.html", post=requested_post, form=form, current_user=current_user, date=date)
+    return render_template(
+        "post.html",
+        post=requested_post,
+        form=form,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route("/about")
 def about():
-    return render_template("about.html", current_user=current_user, date=date)
+    return render_template(
+        "about.html",
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route("/contact")
 def contact():
-    return render_template("contact.html", current_user=current_user, date=date)
+    return render_template(
+        "contact.html",
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route("/new-post", methods=['GET', 'POST'])
@@ -261,7 +288,12 @@ def add_new_post():
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for("get_all_posts"))
-    return render_template("make-post.html", form=form, current_user=current_user, date=date)
+    return render_template(
+        "make-post.html",
+        form=form,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route("/edit-post/<int:post_id>", methods=['GET', 'POST'])
@@ -284,7 +316,13 @@ def edit_post(post_id):
         db.session.commit()
         return redirect(url_for("show_post", post_id=post.id))
 
-    return render_template("make-post.html", form=edit_form, is_edit_post=True, current_user=current_user, date=date)
+    return render_template(
+        "make-post.html",
+        form=edit_form,
+        is_edit_post=True,
+        current_user=current_user,
+        date=datetime.now(timezone.utc).strftime("%a %d %B %Y")
+        )
 
 
 @app.route("/delete/<int:post_id>")
