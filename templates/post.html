@@ -1,6 +1,5 @@
-{% include "header.html" %}
-
 {% import "bootstrap/wtf.html" as wtf %}
+{% include "header.html" %}
 
   <!-- Page Header -->
   <header class="masthead" style="background-image: url('{{post.img_url}}')">
@@ -14,14 +13,13 @@
             <span class="meta">Posted by
               <a href="#">{{post.author.name}}</a>
               on {{post.date}}</span>
-
-            <p><img src="https://media.giphy.com/media/QJfCtrknxjcGPnRfMl/giphy.gif" style="width:9%;"></p>
-
           </div>
         </div>
       </div>
     </div>
   </header>
+
+  <p class="container text-center"><img src="https://media.giphy.com/media/QJfCtrknxjcGPnRfMl/giphy.gif" style="width:19%;"></p>
 
   <!-- Post Content -->
   <article>
@@ -31,24 +29,27 @@
             {{ post.body|safe }}
           <hr>
 
-            <!-- If user id is 1 then they can see the deleted button -->
-            {% if current_user.id == 1: %}
-            <div class="clearfix">
-            <a class="btn btn-primary float-right" href="{{url_for('edit_post', post_id=post.id)}}">Edit Post</a>
-            </div>
+          <!-- If user id is 1 then they can see the deleted button -->
+          {% if current_user.role == 'admin' %}
+          <div class="clearfix text-center mb-5 mt-5">
+          <a class="btn btn-primary" href="{{url_for('edit_post', post_id=post.id)}}">Edit Post</a>
+          </div>
           {% endif %}
 
-
-
-          <!-- Comments Area -->
+          <!-- Comments Area --
           <!-- Load the CKEditor -->
-            {{ ckeditor.load(pkg_type="full") }}
+          {{ ckeditor.load(custom_url='https://cdn.ckeditor.com/4.22.1-lts/full/ckeditor.js') }}
           <!-- Configure it with the name of the form field from CommentForm -->
-            {{ ckeditor.config(name='comment_text') }}
+          {{ ckeditor.config(name='comment_text') }}
           <!-- Create the wtf quickform from CommentForm -->
-            {{ wtf.quick_form(form, novalidate=True, button_map={'submit': 'outline-success  btn-block'}) }}
+          
+          {{ wtf.quick_form(
+              form,
+              novalidate=True,
+              button_map={'submit': 'btn btn-outline-success btn-sm d-block mx-auto mt-5'}
+          ) }}
 
-          <div class="col-lg-8 col-md-10 mx-auto comment">
+          <div class="col-lg-8 col-md-10 comment">
                     {% for comment in post.comments: %}
                       <ul class="commentList">
                         <li>
@@ -60,10 +61,10 @@
                             </div>-->
                             <div class="commentText">
                               <p>{{ comment.text|safe }}</p>
-                              <span class="date sub-text">{{ comment.comment_author.name }} --> </span>
+                              <span class="date sub-text">{{ comment.comment_author.name }} </span>
 
                               <!-- If user id is 1 then they can see the deleted button -->
-                              {% if current_user.id == 1: %}
+                              {% if current_user.role == 'admin' %}
                               <a href="{{url_for('comment_to_delete', comment_id=comment.id) }}" style="color:red"> ✘</a>
                               {% endif %}
                             </div>
