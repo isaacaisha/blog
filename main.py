@@ -36,6 +36,10 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 os.makedirs(app.instance_path, exist_ok=True)
 
 # Extensions
+# Serve from your local static folder
+app.config['CKEDITOR_SERVE_LOCAL'] = True
+# Pick one: 'basic', 'standard', or 'full'
+app.config['CKEDITOR_PKG_TYPE']   = 'full'
 ckeditor = CKEditor(app)
 Bootstrap(app)
 db = SQLAlchemy(app)
@@ -283,7 +287,7 @@ def add_new_post():
             body=form.body.data,
             img_url=form.img_url.data,
             author=current_user,
-            date=date
+            date=datetime.today().strftime("%B %d, %Y")
         )
         db.session.add(new_post)
         db.session.commit()

@@ -25,7 +25,7 @@
   <article>
     <div class="container">
       <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-body col-lg-8 col-md-10 mx-auto">
             {{ post.body|safe }}
           <hr>
 
@@ -38,9 +38,10 @@
 
           <!-- Comments Area --
           <!-- Load the CKEditor -->
-          {{ ckeditor.load(custom_url='https://cdn.ckeditor.com/4.22.1-lts/full/ckeditor.js') }}
+          {{ ckeditor.load() }}
+
           <!-- Configure it with the name of the form field from CommentForm -->
-          {{ ckeditor.config(name='comment_text') }}
+          {{ ckeditor.config(name='body') }}
           <!-- Create the wtf quickform from CommentForm -->
           
           {{ wtf.quick_form(
@@ -49,7 +50,7 @@
               button_map={'submit': 'btn btn-outline-success btn-sm d-block mx-auto mt-5'}
           ) }}
 
-          <div class="col-lg-8 col-md-10 comment">
+          <div class="col-12 comment">
                     {% for comment in post.comments: %}
                       <ul class="commentList">
                         <li>
